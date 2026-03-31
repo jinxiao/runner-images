@@ -2,7 +2,7 @@ locals {
   image_properties_map = {
       "ubuntu22" = {
             source_image_marketplace_sku = "canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2"
-            aws_source_ami_owner        = "099720109477"
+            aws_source_ami_owner        = "837727238323"
             aws_source_ami_name_patterns = {
                   "x86_64" = "ubuntu/images/hvm-ssd-gp3/ubuntu-jammy-22.04-amd64-server-*"
                   "arm64"  = "ubuntu/images/hvm-ssd-gp3/ubuntu-jammy-22.04-arm64-server-*"
@@ -11,7 +11,7 @@ locals {
       },
       "ubuntu24" = {
             source_image_marketplace_sku = "canonical:ubuntu-24_04-lts:server"
-            aws_source_ami_owner        = "099720109477"
+            aws_source_ami_owner        = "837727238323"
             aws_source_ami_name_patterns = {
                   "x86_64" = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"
                   "arm64"  = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-arm64-server-*"
