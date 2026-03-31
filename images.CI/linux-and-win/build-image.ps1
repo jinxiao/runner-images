@@ -51,8 +51,6 @@ $SensitiveData = @(
 
 $providerSource = if ($CloudProvider -eq "aws") { "amazon-ebs.image" } else { "azure-arm.image" }
 $buildTarget = "$buildName.$providerSource"
-$pluginName = if ($CloudProvider -eq "aws") { "github.com/hashicorp/amazon" } else { "github.com/hashicorp/azure" }
-$pluginVersion = if ($CloudProvider -eq "aws") { $AmazonPluginVersion } else { $AzurePluginVersion }
 $azure_tags = $Tags | ConvertTo-Json -Compress
 $aws_tags = $azure_tags
 $aws_ami_users_json = if ($AwsAmiUsers.Count -gt 0) { $AwsAmiUsers | ConvertTo-Json -Compress } else { $null }
@@ -61,10 +59,26 @@ Write-Host "Show Packer Version"
 packer --version
 
 Write-Host "Download packer plugins"
-if ([string]::IsNullOrWhiteSpace($pluginVersion)) {
-    packer plugins install $pluginName
+if ($CloudProvider -eq "aws") {
+    # Mixed template directories still contain azure-arm sources, so Packer needs
+    # the Azure plugin installed even when we only build the amazon-ebs target.
+    if ([string]::IsNullOrWhiteSpace($AmazonPluginVersion)) {
+        packer plugins install github.com/hashicorp/amazon
+    } else {
+        packer plugins install github.com/hashicorp/amazon $AmazonPluginVersion
+    }
+
+    if ([string]::IsNullOrWhiteSpace($AzurePluginVersion)) {
+        packer plugins install github.com/hashicorp/azure
+    } else {
+        packer plugins install github.com/hashicorp/azure $AzurePluginVersion
+    }
 } else {
-    packer plugins install $pluginName $pluginVersion
+    if ([string]::IsNullOrWhiteSpace($AzurePluginVersion)) {
+        packer plugins install github.com/hashicorp/azure
+    } else {
+        packer plugins install github.com/hashicorp/azure $AzurePluginVersion
+    }
 }
 
 Write-Host "Validate packer template"
