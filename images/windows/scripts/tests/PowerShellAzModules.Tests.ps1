@@ -1,4 +1,7 @@
-Describe "AzureModules" {
+$cloudProviderPath = 'C:\image\cloud-provider.txt'
+$isAwsBuild = (Test-Path $cloudProviderPath) -and ((Get-Content $cloudProviderPath -Raw).Trim() -eq 'aws')
+
+Describe "AzureModules" -Skip:($isAwsBuild) {
 
     $modules = (Get-ToolsetContent).azureModules
     $modulesRootPath = "C:\\Modules"

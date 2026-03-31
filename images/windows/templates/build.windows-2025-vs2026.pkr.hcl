@@ -1,5 +1,5 @@
 build {
-  sources = ["source.azure-arm.image"]
+  sources = ["source.azure-arm.image", "source.amazon-ebs.image"]
   name = "windows-2025-vs2026"
 
   provisioner "powershell" {
@@ -7,6 +7,16 @@ build {
       "New-Item -Path ${var.image_folder} -ItemType Directory -Force",
       "New-Item -Path ${var.temp_dir} -ItemType Directory -Force"
     ]
+  }
+
+  provisioner "powershell" {
+    only = ["azure-arm.image"]
+    inline = ["Set-Content -Path '${var.image_folder}\\cloud-provider.txt' -Value 'azure'"]
+  }
+
+  provisioner "powershell" {
+    only = ["amazon-ebs.image"]
+    inline = ["Set-Content -Path '${var.image_folder}\\cloud-provider.txt' -Value 'aws'"]
   }
 
   provisioner "file" {
@@ -116,6 +126,7 @@ build {
   }
 
   provisioner "powershell" {
+    only             = ["azure-arm.image"]
     pause_before     = "2m0s"
     environment_vars = ["IMAGE_FOLDER=${var.image_folder}", "TEMP_DIR=${var.temp_dir}"]
     scripts          = [
@@ -123,6 +134,20 @@ build {
       "${path.root}/../scripts/build/Install-VSExtensions.ps1",
       "${path.root}/../scripts/build/Install-AzureCli.ps1",
       "${path.root}/../scripts/build/Install-AzureDevOpsCli.ps1",
+      "${path.root}/../scripts/build/Install-ChocolateyPackages.ps1",
+      "${path.root}/../scripts/build/Install-JavaTools.ps1",
+      "${path.root}/../scripts/build/Install-Kotlin.ps1",
+      "${path.root}/../scripts/build/Install-OpenSSL.ps1"
+    ]
+  }
+
+  provisioner "powershell" {
+    only             = ["amazon-ebs.image"]
+    pause_before     = "2m0s"
+    environment_vars = ["IMAGE_FOLDER=${var.image_folder}", "TEMP_DIR=${var.temp_dir}", "CLOUD_PROVIDER=aws"]
+    scripts          = [
+      "${path.root}/../scripts/build/Install-Wix.ps1",
+      "${path.root}/../scripts/build/Install-VSExtensions.ps1",
       "${path.root}/../scripts/build/Install-ChocolateyPackages.ps1",
       "${path.root}/../scripts/build/Install-JavaTools.ps1",
       "${path.root}/../scripts/build/Install-Kotlin.ps1",
@@ -150,7 +175,6 @@ build {
       "${path.root}/../scripts/build/Configure-Toolset.ps1",
       "${path.root}/../scripts/build/Install-NodeJS.ps1",
       "${path.root}/../scripts/build/Install-AndroidSDK.ps1",
-      "${path.root}/../scripts/build/Install-PowershellAzModules.ps1",
       "${path.root}/../scripts/build/Install-Pipx.ps1",
       "${path.root}/../scripts/build/Install-Git.ps1",
       "${path.root}/../scripts/build/Install-GitHub-CLI.ps1",
@@ -177,7 +201,6 @@ build {
       "${path.root}/../scripts/build/Install-Haskell.ps1",
       "${path.root}/../scripts/build/Install-Stack.ps1",
       "${path.root}/../scripts/build/Install-Miniconda.ps1",
-      "${path.root}/../scripts/build/Install-AzureCosmosDbEmulator.ps1",
       "${path.root}/../scripts/build/Install-Zstd.ps1",
       "${path.root}/../scripts/build/Install-Vcpkg.ps1",
       "${path.root}/../scripts/build/Install-Bazel.ps1",
@@ -185,6 +208,15 @@ build {
       "${path.root}/../scripts/build/Install-MongoDB.ps1",
       "${path.root}/../scripts/build/Install-CodeQLBundle.ps1",
       "${path.root}/../scripts/build/Configure-Diagnostics.ps1"
+    ]
+  }
+
+  provisioner "powershell" {
+    only             = ["azure-arm.image"]
+    environment_vars = ["IMAGE_FOLDER=${var.image_folder}", "TEMP_DIR=${var.temp_dir}"]
+    scripts          = [
+      "${path.root}/../scripts/build/Install-PowershellAzModules.ps1",
+      "${path.root}/../scripts/build/Install-AzureCosmosDbEmulator.ps1"
     ]
   }
 
@@ -260,10 +292,21 @@ build {
   }
 
   provisioner "powershell" {
+    only = ["azure-arm.image"]
     inline = [
       "if( Test-Path $env:SystemRoot\\System32\\Sysprep\\unattend.xml ){ rm $env:SystemRoot\\System32\\Sysprep\\unattend.xml -Force}",
       "& $env:SystemRoot\\System32\\Sysprep\\Sysprep.exe /oobe /generalize /mode:vm /quiet /quit",
       "while($true) { $imageState = Get-ItemProperty HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Setup\\State | Select ImageState; if($imageState.ImageState -ne 'IMAGE_STATE_GENERALIZE_RESEAL_TO_OOBE') { Write-Output $imageState.ImageState; Start-Sleep -s 10 } else { break } }"
+    ]
+  }
+
+  provisioner "powershell" {
+    only = ["amazon-ebs.image"]
+    inline = [
+      "$ec2Launch = 'C:\\Program Files\\Amazon\\EC2Launch\\ec2launch.exe'",
+      "if (-not (Test-Path $ec2Launch)) { throw 'EC2Launch was not found.' }",
+      "& $ec2Launch reset --block",
+      "& $ec2Launch sysprep --shutdown --block"
     ]
   }
 

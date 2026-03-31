@@ -1,4 +1,7 @@
-Describe "Azure Cosmos DB Emulator" {
+$cloudProviderPath = 'C:\image\cloud-provider.txt'
+$isAwsBuild = (Test-Path $cloudProviderPath) -and ((Get-Content $cloudProviderPath -Raw).Trim() -eq 'aws')
+
+Describe "Azure Cosmos DB Emulator" -Skip:($isAwsBuild) {
     $cosmosDbEmulatorRegKey = Get-ChildItem "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" | Get-ItemProperty | Where-Object { $_.DisplayName -eq 'Azure Cosmos DB Emulator' }
     $installDir = $cosmosDbEmulatorRegKey.InstallLocation
 

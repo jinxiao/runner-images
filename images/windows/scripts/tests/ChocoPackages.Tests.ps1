@@ -10,13 +10,16 @@ Describe "Aria2" {
     }
 }
 
-Describe "AzCopy" {
+$cloudProviderPath = 'C:\image\cloud-provider.txt'
+$isAwsBuild = (Test-Path $cloudProviderPath) -and ((Get-Content $cloudProviderPath -Raw).Trim() -eq 'aws')
+
+Describe "AzCopy" -Skip:($isAwsBuild) {
     It "AzCopy" {
         "azcopy --version" | Should -ReturnZeroExitCode
     }
 }
 
-Describe "Bicep" {
+Describe "Bicep" -Skip:($isAwsBuild) {
     It "Bicep" {
         "bicep --version" | Should -ReturnZeroExitCode
     }

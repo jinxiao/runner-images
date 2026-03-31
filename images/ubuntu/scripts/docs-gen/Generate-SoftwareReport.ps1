@@ -9,6 +9,8 @@ param (
 $global:ErrorActionPreference = "Stop"
 $global:ErrorView = "NormalView"
 Set-StrictMode -Version Latest
+$cloudProviderPath = "/imagegeneration/cloud-provider"
+$isAwsBuild = (Test-Path $cloudProviderPath) -and ((Get-Content $cloudProviderPath -Raw).Trim() -eq "aws")
 
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Android.psm1") -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Browsers.psm1") -DisableNameChecking
@@ -96,10 +98,14 @@ $tools.AddToolVersion("Ansible", $(Get-AnsibleVersion))
 if (Test-IsUbuntu22) {
     $tools.AddToolVersion("apt-fast", $(Get-AptFastVersion))
 }
-$tools.AddToolVersion("AzCopy", $(Get-AzCopyVersion))
+if (-not $isAwsBuild) {
+    $tools.AddToolVersion("AzCopy", $(Get-AzCopyVersion))
+}
 $tools.AddToolVersion("Bazel", $(Get-BazelVersion))
 $tools.AddToolVersion("Bazelisk", $(Get-BazeliskVersion))
-$tools.AddToolVersion("Bicep", $(Get-BicepVersion))
+if (-not $isAwsBuild) {
+    $tools.AddToolVersion("Bicep", $(Get-BicepVersion))
+}
 $tools.AddToolVersion("Buildah", $(Get-BuildahVersion))
 $tools.AddToolVersion("CMake", $(Get-CMakeVersion))
 $tools.AddToolVersion("CodeQL Action Bundle", $(Get-CodeQLBundleVersion))
@@ -156,8 +162,10 @@ if (Test-IsUbuntu22) {
 $cliTools.AddToolVersion("AWS CLI", $(Get-AWSCliVersion))
 $cliTools.AddToolVersion("AWS CLI Session Manager Plugin", $(Get-AWSCliSessionManagerPluginVersion))
 $cliTools.AddToolVersion("AWS SAM CLI", $(Get-AWSSAMVersion))
-$cliTools.AddToolVersion("Azure CLI", $(Get-AzureCliVersion))
-$cliTools.AddToolVersion("Azure CLI (azure-devops)", $(Get-AzureDevopsVersion))
+if (-not $isAwsBuild) {
+    $cliTools.AddToolVersion("Azure CLI", $(Get-AzureCliVersion))
+    $cliTools.AddToolVersion("Azure CLI (azure-devops)", $(Get-AzureDevopsVersion))
+}
 $cliTools.AddToolVersion("GitHub CLI", $(Get-GitHubCliVersion))
 $cliTools.AddToolVersion("Google Cloud CLI", $(Get-GoogleCloudCLIVersion))
 if (Test-IsUbuntu22) {

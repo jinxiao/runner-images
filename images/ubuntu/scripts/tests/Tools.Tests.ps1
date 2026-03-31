@@ -1,5 +1,8 @@
 Import-Module "$PSScriptRoot/../helpers/Common.Helpers.psm1"
-Describe "azcopy" {
+$cloudProviderPath = "/imagegeneration/cloud-provider"
+$isAwsBuild = (Test-Path $cloudProviderPath) -and ((Get-Content $cloudProviderPath -Raw).Trim() -eq "aws")
+
+Describe "azcopy" -Skip:($isAwsBuild) {
     It "azcopy" {
         "azcopy --version" | Should -ReturnZeroExitCode
     }
@@ -9,7 +12,7 @@ Describe "azcopy" {
     }
 }
 
-Describe "Bicep" {
+Describe "Bicep" -Skip:($isAwsBuild) {
     It "Bicep" {
         "bicep --version" | Should -ReturnZeroExitCode
     }

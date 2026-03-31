@@ -37,6 +37,56 @@ variable "use_azure_cli_auth" {
   default = false
 }
 
+// AWS environment related variables
+variable "aws_region" {
+  type    = string
+  default = "${coalesce(env("AWS_REGION"), env("AWS_DEFAULT_REGION"), "")}"
+}
+variable "aws_ami_name" {
+  type    = string
+  default = ""
+}
+variable "aws_ami_users" {
+  type    = list(string)
+  default = []
+}
+variable "aws_associate_public_ip_address" {
+  type    = bool
+  default = true
+}
+variable "aws_encrypt_boot" {
+  type    = bool
+  default = false
+}
+variable "aws_iam_instance_profile" {
+  type    = string
+  default = null
+}
+variable "aws_instance_type" {
+  type    = string
+  default = "m7i.2xlarge"
+}
+variable "aws_kms_key_id" {
+  type    = string
+  default = null
+}
+variable "aws_source_ami" {
+  type    = string
+  default = null
+}
+variable "aws_subnet_id" {
+  type    = string
+  default = null
+}
+variable "aws_tags" {
+  type    = map(string)
+  default = {}
+}
+variable "windows_password_timeout" {
+  type    = string
+  default = "30m"
+}
+
 // Azure environment related variables
 variable "allowed_inbound_ip_addresses" {
   type    = list(string)

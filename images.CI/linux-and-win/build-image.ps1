@@ -1,21 +1,31 @@
 param(
     [String] [Parameter (Mandatory=$true)] $TemplatePath,
     [String] [Parameter (Mandatory=$true)] $BuildTemplateName,
-    [String] [Parameter (Mandatory=$true)] $ClientId,
+    [ValidateSet("azure", "aws")] [String] [Parameter (Mandatory=$false)] $CloudProvider = "azure",
+    [String] [Parameter (Mandatory=$false)] $ClientId,
     [String] [Parameter (Mandatory=$false)] $ClientSecret,
-    [String] [Parameter (Mandatory=$true)] $Location,
+    [String] [Parameter (Mandatory=$false)] $Location,
     [String] [Parameter (Mandatory=$true)] $ImageName,
-    [String] [Parameter (Mandatory=$true)] $ImageResourceGroupName,
-    [String] [Parameter (Mandatory=$true)] $TempResourceGroupName,
-    [String] [Parameter (Mandatory=$true)] $SubscriptionId,
-    [String] [Parameter (Mandatory=$true)] $TenantId,
+    [String] [Parameter (Mandatory=$false)] $ImageResourceGroupName,
+    [String] [Parameter (Mandatory=$false)] $TempResourceGroupName,
+    [String] [Parameter (Mandatory=$false)] $SubscriptionId,
+    [String] [Parameter (Mandatory=$false)] $TenantId,
     [String] [Parameter (Mandatory=$true)] $ImageOS, # e.g. "ubuntu22", "ubuntu24" or "win22", "win25"
     [String] [Parameter (Mandatory=$false)] $UseAzureCliAuth = "false",
-    [String] [Parameter (Mandatory=$false)] $PluginVersion = "2.3.3",
+    [String] [Parameter (Mandatory=$false)] $AzurePluginVersion = "2.3.3",
+    [String] [Parameter (Mandatory=$false)] $AmazonPluginVersion,
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkName,
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkRG,
     [String] [Parameter (Mandatory=$false)] $VirtualNetworkSubnet,
     [String] [Parameter (Mandatory=$false)] $AllowedInboundIpAddresses = "[]",
+    [String] [Parameter (Mandatory=$false)] $AwsRegion,
+    [String] [Parameter (Mandatory=$false)] $AwsArchitecture,
+    [String] [Parameter (Mandatory=$false)] $AwsSubnetId,
+    [String] [Parameter (Mandatory=$false)] $AwsSourceAmi,
+    [String[]] [Parameter (Mandatory=$false)] $AwsAmiUsers = @(),
+    [String] [Parameter (Mandatory=$false)] $AwsIamInstanceProfile,
+    [String] [Parameter (Mandatory=$false)] $AwsInstanceType,
+    [String] [Parameter (Mandatory=$false)] $WindowsPasswordTimeout = "30m",
     [hashtable] [Parameter (Mandatory=$false)] $Tags = @{}
 )
 
@@ -38,40 +48,99 @@ $SensitiveData = @(
     ':  ->'
 )
 
+$providerSource = if ($CloudProvider -eq "aws") { "amazon-ebs.image" } else { "azure-arm.image" }
+$buildTarget = "$buildName.$providerSource"
+$pluginName = if ($CloudProvider -eq "aws") { "github.com/hashicorp/amazon" } else { "github.com/hashicorp/azure" }
+$pluginVersion = if ($CloudProvider -eq "aws") { $AmazonPluginVersion } else { $AzurePluginVersion }
 $azure_tags = $Tags | ConvertTo-Json -Compress
+$aws_tags = $azure_tags
+$aws_ami_users_json = $AwsAmiUsers | ConvertTo-Json -Compress
 
 Write-Host "Show Packer Version"
 packer --version
 
 Write-Host "Download packer plugins"
-packer plugins install github.com/hashicorp/azure $pluginVersion
+if ([string]::IsNullOrWhiteSpace($pluginVersion)) {
+    packer plugins install $pluginName
+} else {
+    packer plugins install $pluginName $pluginVersion
+}
 
 Write-Host "Validate packer template"
-packer validate -syntax-only -only "$buildName*" $TemplatePath
+packer validate -syntax-only -only $buildTarget $TemplatePath
 
 Write-Host "Build $buildName VM"
-packer build    -only "$buildName*" `
-                -var "client_id=$ClientId" `
-                -var "client_secret=$ClientSecret" `
-                -var "install_password=$InstallPassword" `
-                -var "location=$Location" `
-                -var "image_os=$ImageOS" `
-                -var "managed_image_name=$ImageName" `
-                -var "managed_image_resource_group_name=$ImageResourceGroupName" `
-                -var "subscription_id=$SubscriptionId" `
-                -var "temp_resource_group_name=$TempResourceGroupName" `
-                -var "tenant_id=$TenantId" `
-                -var "virtual_network_name=$VirtualNetworkName" `
-                -var "virtual_network_resource_group_name=$VirtualNetworkRG" `
-                -var "virtual_network_subnet_name=$VirtualNetworkSubnet" `
-                -var "allowed_inbound_ip_addresses=$($AllowedInboundIpAddresses)" `
-                -var "use_azure_cli_auth=$UseAzureCliAuth" `
-                -var "azure_tags=$azure_tags" `
-                -color=false `
-                $TemplatePath `
+if ($CloudProvider -eq "aws") {
+    $buildArgs = @(
+        "build"
+        "-only"
+        $buildTarget
+        "-var"
+        "aws_ami_name=$ImageName"
+        "-var"
+        "aws_ami_users=$aws_ami_users_json"
+        "-var"
+        "aws_tags=$aws_tags"
+        "-var"
+        "image_os=$ImageOS"
+        "-var"
+        "install_password=$InstallPassword"
+        "-var"
+        "windows_password_timeout=$WindowsPasswordTimeout"
+        "-color=false"
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($AwsRegion)) {
+        $buildArgs += @("-var", "aws_region=$AwsRegion")
+    }
+    if (-not [string]::IsNullOrWhiteSpace($AwsArchitecture)) {
+        $buildArgs += @("-var", "aws_architecture=$AwsArchitecture")
+    }
+    if (-not [string]::IsNullOrWhiteSpace($AwsIamInstanceProfile)) {
+        $buildArgs += @("-var", "aws_iam_instance_profile=$AwsIamInstanceProfile")
+    }
+    if (-not [string]::IsNullOrWhiteSpace($AwsInstanceType)) {
+        $buildArgs += @("-var", "aws_instance_type=$AwsInstanceType")
+    }
+    if (-not [string]::IsNullOrWhiteSpace($AwsSourceAmi)) {
+        $buildArgs += @("-var", "aws_source_ami=$AwsSourceAmi")
+    }
+    if (-not [string]::IsNullOrWhiteSpace($AwsSubnetId)) {
+        $buildArgs += @("-var", "aws_subnet_id=$AwsSubnetId")
+    }
+
+    $buildArgs += $TemplatePath
+
+    packer @buildArgs `
+            | Where-Object {
+                $currentString = $_
+                $sensitiveString = $SensitiveData | Where-Object { $currentString -match $_ }
+                $sensitiveString -eq $null
+            }
+} else {
+    packer build    -only $buildTarget `
+                    -var "client_id=$ClientId" `
+                    -var "client_secret=$ClientSecret" `
+                    -var "install_password=$InstallPassword" `
+                    -var "location=$Location" `
+                    -var "image_os=$ImageOS" `
+                    -var "managed_image_name=$ImageName" `
+                    -var "managed_image_resource_group_name=$ImageResourceGroupName" `
+                    -var "subscription_id=$SubscriptionId" `
+                    -var "temp_resource_group_name=$TempResourceGroupName" `
+                    -var "tenant_id=$TenantId" `
+                    -var "virtual_network_name=$VirtualNetworkName" `
+                    -var "virtual_network_resource_group_name=$VirtualNetworkRG" `
+                    -var "virtual_network_subnet_name=$VirtualNetworkSubnet" `
+                    -var "allowed_inbound_ip_addresses=$($AllowedInboundIpAddresses)" `
+                    -var "use_azure_cli_auth=$UseAzureCliAuth" `
+                    -var "azure_tags=$azure_tags" `
+                    -color=false `
+                    $TemplatePath `
         | Where-Object {
             #Filter sensitive data from Packer logs
             $currentString = $_
             $sensitiveString = $SensitiveData | Where-Object { $currentString -match $_ }
             $sensitiveString -eq $null
         }
+}

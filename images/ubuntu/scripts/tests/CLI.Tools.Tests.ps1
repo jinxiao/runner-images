@@ -1,10 +1,13 @@
-Describe "Azure CLI" {
+$cloudProviderPath = "/imagegeneration/cloud-provider"
+$isAwsBuild = (Test-Path $cloudProviderPath) -and ((Get-Content $cloudProviderPath -Raw).Trim() -eq "aws")
+
+Describe "Azure CLI" -Skip:($isAwsBuild) {
     It "Azure CLI" {
         "az --version" | Should -ReturnZeroExitCode
     }
 }
 
-Describe "Azure DevOps CLI" {
+Describe "Azure DevOps CLI" -Skip:($isAwsBuild) {
     It "az devops" {
         "az devops -h" | Should -ReturnZeroExitCode
     }

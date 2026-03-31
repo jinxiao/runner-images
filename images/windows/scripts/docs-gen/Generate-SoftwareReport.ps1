@@ -5,6 +5,8 @@ $global:ErrorActionPreference = "Stop"
 $global:ProgressPreference = "SilentlyContinue"
 $ErrorView = "NormalView"
 Set-StrictMode -Version Latest
+$cloudProviderPath = 'C:\image\cloud-provider.txt'
+$isAwsBuild = (Test-Path $cloudProviderPath) -and ((Get-Content $cloudProviderPath -Raw).Trim() -eq 'aws')
 
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Android.psm1") -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Browsers.psm1") -DisableNameChecking
@@ -66,10 +68,14 @@ $projectManagement.AddToolVersion("sbt", $(Get-SbtVersion))
 $tools = $installedSoftware.AddHeader("Tools")
 $tools.AddToolVersion("7zip", $(Get-7zipVersion))
 $tools.AddToolVersion("aria2", $(Get-Aria2Version))
-$tools.AddToolVersion("azcopy", $(Get-AzCopyVersion))
+if (-not $isAwsBuild) {
+    $tools.AddToolVersion("azcopy", $(Get-AzCopyVersion))
+}
 $tools.AddToolVersion("Bazel", $(Get-BazelVersion))
 $tools.AddToolVersion("Bazelisk", $(Get-BazeliskVersion))
-$tools.AddToolVersion("Bicep", $(Get-BicepVersion))
+if (-not $isAwsBuild) {
+    $tools.AddToolVersion("Bicep", $(Get-BicepVersion))
+}
 $tools.AddToolVersion("Cabal", $(Get-CabalVersion))
 $tools.AddToolVersion("CMake", $(Get-CMakeVersion))
 $tools.AddToolVersion("CodeQL Action Bundle", $(Get-CodeQLBundleVersion))
@@ -119,8 +125,10 @@ if (-not (Test-IsWin25)) {
 $cliTools.AddToolVersion("AWS CLI", $(Get-AWSCLIVersion))
 $cliTools.AddToolVersion("AWS SAM CLI", $(Get-AWSSAMVersion))
 $cliTools.AddToolVersion("AWS Session Manager CLI", $(Get-AWSSessionManagerVersion))
-$cliTools.AddToolVersion("Azure CLI", $(Get-AzureCLIVersion))
-$cliTools.AddToolVersion("Azure DevOps CLI extension", $(Get-AzureDevopsExtVersion))
+if (-not $isAwsBuild) {
+    $cliTools.AddToolVersion("Azure CLI", $(Get-AzureCLIVersion))
+    $cliTools.AddToolVersion("Azure DevOps CLI extension", $(Get-AzureDevopsExtVersion))
+}
 $cliTools.AddToolVersion("GitHub CLI", $(Get-GHVersion))
 
 # Rust Tools
@@ -173,7 +181,9 @@ $databases.AddHeader("MongoDB").AddTable($(Get-MongoDBTable))
 
 # Database tools
 $databaseTools = $installedSoftware.AddHeader("Database tools")
-$databaseTools.AddToolVersion("Azure CosmosDb Emulator", $(Get-AzCosmosDBEmulatorVersion))
+if (-not $isAwsBuild) {
+    $databaseTools.AddToolVersion("Azure CosmosDb Emulator", $(Get-AzCosmosDBEmulatorVersion))
+}
 $databaseTools.AddToolVersion("DacFx", $(Get-DacFxVersion))
 $databaseTools.AddToolVersion("MySQL", $(Get-MySQLVersion))
 $databaseTools.AddToolVersion("SQL OLEDB Driver 18", $(Get-SQLOLEDBDriver18Version))

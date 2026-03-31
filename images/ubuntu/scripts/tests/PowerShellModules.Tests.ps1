@@ -22,7 +22,10 @@ Describe "PowerShellModules" {
     }
 }
 
-Describe "AzureModules" {
+$cloudProviderPath = "/imagegeneration/cloud-provider"
+$isAwsBuild = (Test-Path $cloudProviderPath) -and ((Get-Content $cloudProviderPath -Raw).Trim() -eq "aws")
+
+Describe "AzureModules" -Skip:($isAwsBuild) {
     $modules = (Get-ToolsetContent).azureModules
     $modulesRootPath = "/usr/share"
 

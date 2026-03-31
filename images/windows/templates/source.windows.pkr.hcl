@@ -52,3 +52,41 @@ source "azure-arm" "image" {
     }
   }
 }
+
+source "amazon-ebs" "image" {
+  ami_name                    = var.aws_ami_name
+  ami_users                   = var.aws_ami_users
+  associate_public_ip_address = var.aws_associate_public_ip_address
+  communicator                = "winrm"
+  encrypt_boot                = var.aws_encrypt_boot
+  iam_instance_profile        = var.aws_iam_instance_profile
+  instance_type               = var.aws_instance_type
+  kms_key_id                  = var.aws_kms_key_id
+  region                      = var.aws_region
+  source_ami                  = var.aws_source_ami
+  subnet_id                   = var.aws_subnet_id
+  tags                        = var.aws_tags
+  user_data_file              = "${path.root}/aws-winrm-bootstrap.txt"
+  winrm_insecure              = true
+  winrm_timeout               = "2h"
+  winrm_use_ssl               = false
+  winrm_username              = "Administrator"
+  windows_password_timeout    = var.windows_password_timeout
+
+  launch_block_device_mappings {
+    delete_on_termination = true
+    device_name           = "/dev/sda1"
+    volume_size           = local.os_disk_size_gb
+    volume_type           = "gp3"
+  }
+
+  source_ami_filter {
+    filters = {
+      name                = local.aws_source_ami_name_pattern
+      root-device-type    = "ebs"
+      virtualization-type = "hvm"
+    }
+    most_recent = true
+    owners      = [local.aws_source_ami_owner]
+  }
+}
