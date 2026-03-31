@@ -40,7 +40,7 @@ variable "use_azure_cli_auth" {
 // AWS environment related variables
 variable "aws_region" {
   type    = string
-  default = "${coalesce(env("AWS_REGION"), env("AWS_DEFAULT_REGION"), "")}"
+  default = "${env("AWS_REGION")}"
 }
 variable "aws_ami_name" {
   type    = string

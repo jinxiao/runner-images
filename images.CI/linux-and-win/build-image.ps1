@@ -37,6 +37,7 @@ if (-not (Test-Path $TemplatePath))
 
 $buildName = $($BuildTemplateName).Split(".")[1]
 $InstallPassword = [System.GUID]::NewGuid().ToString().ToUpper()
+$isWindowsImage = $ImageOS -like "win*"
 
 $SensitiveData = @(
     'OSType',
@@ -54,7 +55,7 @@ $pluginName = if ($CloudProvider -eq "aws") { "github.com/hashicorp/amazon" } el
 $pluginVersion = if ($CloudProvider -eq "aws") { $AmazonPluginVersion } else { $AzurePluginVersion }
 $azure_tags = $Tags | ConvertTo-Json -Compress
 $aws_tags = $azure_tags
-$aws_ami_users_json = $AwsAmiUsers | ConvertTo-Json -Compress
+$aws_ami_users_json = if ($AwsAmiUsers.Count -gt 0) { $AwsAmiUsers | ConvertTo-Json -Compress } else { $null }
 
 Write-Host "Show Packer Version"
 packer --version
@@ -78,20 +79,19 @@ if ($CloudProvider -eq "aws") {
         "-var"
         "aws_ami_name=$ImageName"
         "-var"
-        "aws_ami_users=$aws_ami_users_json"
-        "-var"
         "aws_tags=$aws_tags"
         "-var"
         "image_os=$ImageOS"
         "-var"
         "install_password=$InstallPassword"
-        "-var"
-        "windows_password_timeout=$WindowsPasswordTimeout"
         "-color=false"
     )
 
     if (-not [string]::IsNullOrWhiteSpace($AwsRegion)) {
         $buildArgs += @("-var", "aws_region=$AwsRegion")
+    }
+    if (-not [string]::IsNullOrWhiteSpace($aws_ami_users_json)) {
+        $buildArgs += @("-var", "aws_ami_users=$aws_ami_users_json")
     }
     if (-not [string]::IsNullOrWhiteSpace($AwsArchitecture)) {
         $buildArgs += @("-var", "aws_architecture=$AwsArchitecture")
@@ -107,6 +107,9 @@ if ($CloudProvider -eq "aws") {
     }
     if (-not [string]::IsNullOrWhiteSpace($AwsSubnetId)) {
         $buildArgs += @("-var", "aws_subnet_id=$AwsSubnetId")
+    }
+    if ($isWindowsImage -and (-not [string]::IsNullOrWhiteSpace($WindowsPasswordTimeout))) {
+        $buildArgs += @("-var", "windows_password_timeout=$WindowsPasswordTimeout")
     }
 
     $buildArgs += $TemplatePath
