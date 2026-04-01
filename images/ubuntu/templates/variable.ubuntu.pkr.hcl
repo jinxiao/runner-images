@@ -56,7 +56,7 @@ variable "aws_ami_users" {
 }
 variable "aws_associate_public_ip_address" {
   type    = bool
-  default = true
+  default = false
 }
 variable "aws_encrypt_boot" {
   type    = bool
@@ -80,7 +80,7 @@ variable "aws_source_ami" {
 }
 variable "aws_ssh_interface" {
   type    = string
-  default = "public_ip"
+  default = "private_ip"
 }
 variable "aws_subnet_id" {
   type    = string
