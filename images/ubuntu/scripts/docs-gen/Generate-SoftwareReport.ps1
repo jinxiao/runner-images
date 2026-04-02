@@ -12,7 +12,6 @@ Set-StrictMode -Version Latest
 $cloudProviderPath = "/imagegeneration/cloud-provider"
 $isAwsBuild = (Test-Path $cloudProviderPath) -and ((Get-Content $cloudProviderPath -Raw).Trim() -eq "aws")
 
-Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Android.psm1") -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Browsers.psm1") -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.CachedTools.psm1") -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Common.psm1") -DisableNameChecking
@@ -39,14 +38,9 @@ $installedSoftware = $softwareReport.Root.AddHeader("Installed Software")
 # Language and Runtime
 $languageAndRuntime = $installedSoftware.AddHeader("Language and Runtime")
 $languageAndRuntime.AddToolVersion("Bash", $(Get-BashVersion))
-$languageAndRuntime.AddToolVersionsListInline("Clang", $(Get-ClangToolVersions -ToolName "clang"), "^\d+")
-$languageAndRuntime.AddToolVersionsListInline("Clang-format", $(Get-ClangToolVersions -ToolName "clang-format"), "^\d+")
-$languageAndRuntime.AddToolVersionsListInline("Clang-tidy", $(Get-ClangTidyVersions), "^\d+")
 $languageAndRuntime.AddToolVersion("Dash", $(Get-DashVersion))
 $languageAndRuntime.AddToolVersionsListInline("GNU C++", $(Get-CPPVersions), "^\d+")
 $languageAndRuntime.AddToolVersionsListInline("GNU Fortran", $(Get-FortranVersions), "^\d+")
-$languageAndRuntime.AddToolVersion("Julia", $(Get-JuliaVersion))
-$languageAndRuntime.AddToolVersion("Kotlin", $(Get-KotlinVersion))
 if (-not $(Test-IsUbuntu24)) {
     $languageAndRuntime.AddToolVersion("Mono", $(Get-MonoVersion))
     $languageAndRuntime.AddToolVersion("MSBuild", $(Get-MsbuildVersion))
@@ -54,8 +48,6 @@ if (-not $(Test-IsUbuntu24)) {
 $languageAndRuntime.AddToolVersion("Node.js", $(Get-NodeVersion))
 $languageAndRuntime.AddToolVersion("Perl", $(Get-PerlVersion))
 $languageAndRuntime.AddToolVersion("Python", $(Get-PythonVersion))
-$languageAndRuntime.AddToolVersion("Ruby", $(Get-RubyVersion))
-$languageAndRuntime.AddToolVersion("Swift", $(Get-SwiftVersion))
 
 
 # Package Management
@@ -71,7 +63,6 @@ if (-not $(Test-IsUbuntu24)) {
 $packageManagement.AddToolVersion("Pip", $(Get-PipVersion))
 $packageManagement.AddToolVersion("Pip3", $(Get-Pip3Version))
 $packageManagement.AddToolVersion("Pipx", $(Get-PipxVersion))
-$packageManagement.AddToolVersion("RubyGems", $(Get-GemVersion))
 $packageManagement.AddToolVersion("Vcpkg", $(Get-VcpkgVersion))
 $packageManagement.AddToolVersion("Yarn", $(Get-YarnVersion))
 $packageManagement.AddHeader("Environment variables").AddTable($(Build-PackageManagementEnvironmentTable))
@@ -107,14 +98,11 @@ if (-not $isAwsBuild) {
     $tools.AddToolVersion("Bicep", $(Get-BicepVersion))
 }
 $tools.AddToolVersion("Buildah", $(Get-BuildahVersion))
-$tools.AddToolVersion("CMake", $(Get-CMakeVersion))
-$tools.AddToolVersion("CodeQL Action Bundle", $(Get-CodeQLBundleVersion))
 $tools.AddToolVersion("Docker Amazon ECR Credential Helper", $(Get-DockerAmazonECRCredHelperVersion))
 $tools.AddToolVersion("Docker Compose v2", $(Get-DockerComposeV2Version))
 $tools.AddToolVersion("Docker-Buildx", $(Get-DockerBuildxVersion))
 $tools.AddToolVersion("Docker Client", $(Get-DockerClientVersion))
 $tools.AddToolVersion("Docker Server", $(Get-DockerServerVersion))
-$tools.AddToolVersion("Fastlane", $(Get-FastlaneVersion))
 $tools.AddToolVersion("Git", $(Get-GitVersion))
 $tools.AddToolVersion("Git LFS", $(Get-GitLFSVersion))
 $tools.AddToolVersion("Git-ftp", $(Get-GitFTPVersion))
@@ -192,25 +180,6 @@ $haskellTools.AddToolVersion("GHC", $(Get-GHCVersion))
 $haskellTools.AddToolVersion("GHCup", $(Get-GHCupVersion))
 $haskellTools.AddToolVersion("Stack", $(Get-StackVersion))
 
-# Rust Tools
-Initialize-RustEnvironment
-$rustTools = $installedSoftware.AddHeader("Rust Tools")
-$rustTools.AddToolVersion("Cargo", $(Get-CargoVersion))
-$rustTools.AddToolVersion("Rust", $(Get-RustVersion))
-$rustTools.AddToolVersion("Rustdoc", $(Get-RustdocVersion))
-$rustTools.AddToolVersion("Rustup", $(Get-RustupVersion))
-
-# Packages
-$rustToolsPackages = $rustTools.AddHeader("Packages")
-if (Test-IsUbuntu22) {
-    $rustToolsPackages.AddToolVersion("Bindgen", $(Get-BindgenVersion))
-    $rustToolsPackages.AddToolVersion("Cargo audit", $(Get-CargoAuditVersion))
-    $rustToolsPackages.AddToolVersion("Cargo clippy", $(Get-CargoClippyVersion))
-    $rustToolsPackages.AddToolVersion("Cargo outdated", $(Get-CargoOutdatedVersion))
-    $rustToolsPackages.AddToolVersion("Cbindgen", $(Get-CbindgenVersion))
-}
-$rustToolsPackages.AddToolVersion("Rustfmt", $(Get-RustfmtVersion))
-
 # Browsers and Drivers
 $browsersTools = $installedSoftware.AddHeader("Browsers and Drivers")
 $browsersTools.AddToolVersion("Google Chrome", $(Get-ChromeVersion))
@@ -227,11 +196,6 @@ $browsersTools.AddToolVersion("Geckodriver", $(Get-GeckodriverVersion))
 # Environment variables
 $browsersTools.AddHeader("Environment variables").AddTable($(Build-BrowserWebdriversEnvironmentTable))
 
-# .NET Tools
-$netCoreTools = $installedSoftware.AddHeader(".NET Tools")
-$netCoreTools.AddToolVersionsListInline(".NET Core SDK", $(Get-DotNetCoreSdkVersions), "^\d+\.\d+\.\d")
-$netCoreTools.AddNodes($(Get-DotnetTools))
-
 # Databases
 $databasesTools = $installedSoftware.AddHeader("Databases")
 $databasesTools.AddToolVersion("sqlite3", $(Get-SqliteVersion))
@@ -247,20 +211,12 @@ $cachedTools.AddToolVersionsList("Go", $(Get-ToolcacheGoVersions), "^\d+\.\d+")
 $cachedTools.AddToolVersionsList("Node.js", $(Get-ToolcacheNodeVersions), "^\d+")
 $cachedTools.AddToolVersionsList("Python", $(Get-ToolcachePythonVersions), "^\d+\.\d+")
 $cachedTools.AddToolVersionsList("PyPy", $(Get-ToolcachePyPyVersions), "^\d+\.\d+")
-$cachedTools.AddToolVersionsList("Ruby", $(Get-ToolcacheRubyVersions), "^\d+\.\d+")
-
-
 # PowerShell Tools
 $powerShellTools = $installedSoftware.AddHeader("PowerShell Tools")
 $powerShellTools.AddToolVersion("PowerShell", $(Get-PowershellVersion))
 $powerShellTools.AddHeader("PowerShell Modules").AddNodes($(Get-PowerShellModules))
 
 $installedSoftware.AddHeader("Web Servers").AddTable($(Build-WebServersTable))
-
-$androidTools = $installedSoftware.AddHeader("Android")
-$androidTools.AddTable($(Build-AndroidTable))
-
-$androidTools.AddHeader("Environment variables").AddTable($(Build-AndroidEnvironmentTable))
 
 $installedSoftware.AddHeader("Installed apt packages").AddTable($(Get-AptPackages))
 

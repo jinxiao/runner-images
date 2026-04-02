@@ -13,8 +13,10 @@ echo "chmod -R 777 /usr/share"
 chmod -R 777 /usr/share
 echo "chmod -R 777 /opt"
 chmod -R 777 /opt
-echo "Setting sticky bit on hostedtoolcache Ruby directories due to the changes in Ruby 4.0; see issue: https://github.com/actions/runner-images/issues/13647"
-find /opt/hostedtoolcache/Ruby -type d -exec chmod +t {} +
+if [[ -d /opt/hostedtoolcache/Ruby ]]; then
+    echo "Setting sticky bit on hostedtoolcache Ruby directories due to the changes in Ruby 4.0; see issue: https://github.com/actions/runner-images/issues/13647"
+    find /opt/hostedtoolcache/Ruby -type d -exec chmod +t {} +
+fi
 
 chmod 755 $IMAGE_FOLDER
 

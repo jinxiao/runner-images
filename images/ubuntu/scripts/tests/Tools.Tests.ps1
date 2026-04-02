@@ -2,69 +2,9 @@ Import-Module "$PSScriptRoot/../helpers/Common.Helpers.psm1"
 $cloudProviderPath = "/imagegeneration/cloud-provider"
 $isAwsBuild = (Test-Path $cloudProviderPath) -and ((Get-Content $cloudProviderPath -Raw).Trim() -eq "aws")
 
-Describe "azcopy" -Skip:($isAwsBuild) {
-    It "azcopy" {
-        "azcopy --version" | Should -ReturnZeroExitCode
-    }
-
-    It "azcopy10 link exists" {
-        "azcopy10 --version" | Should -ReturnZeroExitCode
-    }
-}
-
 Describe "Bicep" -Skip:($isAwsBuild) {
     It "Bicep" {
         "bicep --version" | Should -ReturnZeroExitCode
-    }
-}
-
-Describe "Rust" {
-    BeforeAll {
-        $env:PATH = "/etc/skel/.cargo/bin:/etc/skel/.rustup/bin:$($env:PATH)"
-        $env:RUSTUP_HOME = "/etc/skel/.rustup"
-        $env:CARGO_HOME = "/etc/skel/.cargo"
-    }
-
-    It "Rustup is installed" {
-        "rustup --version" | Should -ReturnZeroExitCode
-    }
-
-    It "Rustc is installed" {
-        "rustc --version" | Should -ReturnZeroExitCode
-    }
-
-    It "Rustdoc is installed" {
-        "rustdoc --version" | Should -ReturnZeroExitCode
-    }
-
-    It "Rustfmt is installed" {
-        "rustfmt --version" | Should -ReturnZeroExitCode
-    }
-    
-    It "cargo" {
-        "cargo --version" | Should -ReturnZeroExitCode
-    }
-
-    Context "Cargo dependencies" -Skip:((-not (Test-IsUbuntu22))) {
-        It "bindgen" {
-            "bindgen --version" | Should -ReturnZeroExitCode
-        }
-
-        It "cbindgen" {
-            "cbindgen --version" | Should -ReturnZeroExitCode
-        }
-
-        It "cargo-clippy" {
-            "cargo-clippy --version" | Should -ReturnZeroExitCode
-        }
-
-        It "Cargo audit" {
-            "cargo audit --version" | Should -ReturnZeroExitCode
-        }
-
-        It "Cargo outdated" {
-            "cargo outdated --version" | Should -ReturnZeroExitCode
-        }
     }
 }
 
@@ -131,63 +71,11 @@ Describe "Bazel" {
     }
 }
 
-Describe "clang" {
-    $testCases = (Get-ToolsetContent).clang.Versions | ForEach-Object { @{ClangVersion = $_} }
-
-    It "clang <ClangVersion>" -TestCases $testCases {
-        "clang-$ClangVersion --version" | Should -ReturnZeroExitCode
-        "clang++-$ClangVersion --version" | Should -ReturnZeroExitCode
-        "clang-format-$ClangVersion --version" | Should -ReturnZeroExitCode
-        "clang-tidy-$ClangVersion --version" | Should -ReturnZeroExitCode
-        "run-clang-tidy-$ClangVersion --help" | Should -ReturnZeroExitCode
-    }
-}
-
-Describe "Cmake" {
-    It "cmake" {
-        "cmake --version" | Should -ReturnZeroExitCode
-    }
-}
-
 Describe "gcc" {
     $testCases = (Get-ToolsetContent).gcc.Versions | ForEach-Object { @{GccVersion = $_} }
 
     It "gcc <GccVersion>" -TestCases $testCases {
         "$GccVersion --version" | Should -ReturnZeroExitCode
-    }
-}
-
-Describe "gfortran" {
-    $testCases = (Get-ToolsetContent).gfortran.Versions | ForEach-Object { @{GfortranVersion = $_} }
-
-    It "gfortran <GfortranVersion>" -TestCases $testCases {
-        "$GfortranVersion --version" | Should -ReturnZeroExitCode
-    }
-}
-
-Describe "Mono" -Skip:(Test-IsUbuntu24) {
-    It "mono" {
-        "mono --version" | Should -ReturnZeroExitCode
-    }
-
-    It "msbuild" {
-        "msbuild -version" | Should -ReturnZeroExitCode
-    }
-
-    It "nuget" {
-        "nuget" | Should -ReturnZeroExitCode
-    }
-}
-
-Describe "MSSQLCommandLineTools" -Skip:((-not (Test-IsUbuntu22))) {
-    It "sqlcmd" {
-        "sqlcmd -?" | Should -ReturnZeroExitCode
-    }
-}
-
-Describe "SqlPackage" -Skip:((-not (Test-IsUbuntu22))) {
-    It "sqlpackage" {
-        "sqlpackage /version" | Should -ReturnZeroExitCode
     }
 }
 
@@ -260,12 +148,6 @@ Describe "Homebrew" {
     }
 }
 
-Describe "Julia" {
-    It "julia" {
-        "julia --version" | Should -ReturnZeroExitCode
-    }
-}
-
 Describe "Kubernetes tools" {
     It "kind" {
         "kind version" | Should -ReturnZeroExitCode
@@ -306,12 +188,6 @@ Describe "Packer" {
     }
 }
 
-Describe "Pulumi" {
-    It "pulumi" {
-        "pulumi version" | Should -ReturnZeroExitCode
-    }
-}
-
 Describe "Containers" {
     $testCases = @("podman", "buildah", "skopeo") | ForEach-Object { @{ContainerCommand = $_} }
 
@@ -342,73 +218,14 @@ Describe "Python" {
     }
 }
 
-Describe "Ruby" {
-    $testCases = @("ruby", "gem") | ForEach-Object { @{RubyCommand = $_} }
-
-    It "<RubyCommand>" -TestCases $testCases {
-        "$RubyCommand --version" | Should -ReturnZeroExitCode
-    }
-
-    $gemTestCases = (Get-ToolsetContent).rubygems | ForEach-Object { @{gemName = $_.name} }
-
-    if ($gemTestCases) {
-        It "Gem <gemName> is installed" -TestCases $gemTestCases {
-            "gem list -i '^$gemName$'" | Should -OutputTextMatchingRegex "true"
-        }
-    }
-}
-
 Describe "yq" {
     It "yq" {
         "yq -V" | Should -ReturnZeroExitCode
     }
 }
 
-Describe "Kotlin" {
-    It "kapt" {
-        "kapt -version" | Should -ReturnZeroExitCode
-    }
-
-    It "kotlin" {
-        "kotlin -version" | Should -ReturnZeroExitCode
-    }
-
-    It "kotlinc" {
-        "kotlinc -version" | Should -ReturnZeroExitCode
-    }
-
-    It "kotlinc-jvm" {
-        "kotlinc-jvm -version" | Should -ReturnZeroExitCode
-    }
-
-    It "kotlinc-js" {
-        "kotlinc-js -help" | Should -ReturnZeroExitCode
-    }
-}
-
 Describe "Ninja" {
-    BeforeAll {
-        New-item -Path "/tmp/ninjaproject" -ItemType Directory -Force
-@'
-cmake_minimum_required(VERSION 3.10)
-project(NinjaTest NONE)
-'@ | Out-File -FilePath "/tmp/ninjaproject/CMakeLists.txt"
-    }
-
-    It "Make a simple ninja project" {
-        "cmake -GNinja -S /tmp/ninjaproject -B /tmp/ninjaproject" | Should -ReturnZeroExitCode
-    }
-
-    It "build.ninja file should exist" {
-        $buildFilePath = Join-Path "/tmp/ninjaproject" "build.ninja"
-        $buildFilePath | Should -Exist
-    }
-
     It "Ninja" {
         "ninja --version" | Should -ReturnZeroExitCode
-    }
-
-    AfterAll {
-        Remove-Item -Path "/tmp/ninjaproject" -Recurse -Force
     }
 }
