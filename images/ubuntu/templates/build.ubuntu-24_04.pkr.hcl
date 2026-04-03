@@ -131,7 +131,6 @@ provisioner "shell" {
     scripts          = [
       "${path.root}/../scripts/build/install-actions-cache.sh",
       "${path.root}/../scripts/build/install-apt-common.sh",
-      "${path.root}/../scripts/build/install-apache.sh",
       "${path.root}/../scripts/build/install-aws-tools.sh",
       "${path.root}/../scripts/build/install-container-tools.sh",
       "${path.root}/../scripts/build/install-gcc-compilers.sh",
