@@ -141,24 +141,6 @@ Both Xdebug and PCOV extensions are installed, but only Xdebug is enabled.
 #### Packages
 - Rustfmt 1.8.0
 
-### Browsers and Drivers
-- Google Chrome 146.0.7680.164
-- ChromeDriver 146.0.7680.165
-- Chromium 146.0.7680.0
-- Microsoft Edge 146.0.3856.72
-- Microsoft Edge WebDriver 146.0.3856.72
-- Selenium server 4.41.0
-- Mozilla Firefox 148.0.2
-- Geckodriver 0.36.0
-
-#### Environment variables
-| Name              | Value                                 |
-| ----------------- | ------------------------------------- |
-| CHROMEWEBDRIVER   | /usr/local/share/chromedriver-linux64 |
-| EDGEWEBDRIVER     | /usr/local/share/edge_driver          |
-| GECKOWEBDRIVER    | /usr/local/share/gecko_driver         |
-| SELENIUM_JAR_PATH | /usr/share/java/selenium-server.jar   |
-
 ### .NET Tools
 - .NET Core SDK: 8.0.125, 8.0.206, 8.0.319, 8.0.419, 9.0.115, 9.0.205, 9.0.312, 10.0.105, 10.0.201
 - nbgv 3.9.50+6feeb89450
@@ -328,4 +310,3 @@ Use the following command as a part of your job to start the service: 'sudo syst
 | xz-utils               | 5.6.1+really5.4.5-1ubuntu0.2 |
 | zip                    | 3.0-13ubuntu0.2              |
 | zsync                  | 0.6.2-5build1                |
-

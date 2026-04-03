@@ -12,7 +12,6 @@ Set-StrictMode -Version Latest
 $cloudProviderPath = "/imagegeneration/cloud-provider"
 $isAwsBuild = (Test-Path $cloudProviderPath) -and ((Get-Content $cloudProviderPath -Raw).Trim() -eq "aws")
 
-Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Browsers.psm1") -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.CachedTools.psm1") -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Common.psm1") -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Databases.psm1") -DisableNameChecking
@@ -22,6 +21,10 @@ Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Java.psm1") -DisableNameC
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Rust.psm1") -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Tools.psm1") -DisableNameChecking
 Import-Module (Join-Path $PSScriptRoot "SoftwareReport.WebServers.psm1") -DisableNameChecking
+
+if (-not (Test-IsUbuntu24)) {
+    Import-Module (Join-Path $PSScriptRoot "SoftwareReport.Browsers.psm1") -DisableNameChecking
+}
 
 # Restore file owner in user profile
 sudo chown -R ${env:USER}: $env:HOME
@@ -166,35 +169,21 @@ if (Test-IsUbuntu22) {
 # Java
 $installedSoftware.AddHeader("Java").AddTable($(Get-JavaVersionsTable))
 
-# PHP Tools
-$phpTools = $installedSoftware.AddHeader("PHP Tools")
-$phpTools.AddToolVersionsListInline("PHP", $(Get-PHPVersions), "^\d+\.\d+")
-$phpTools.AddToolVersion("Composer", $(Get-ComposerVersion))
-$phpTools.AddToolVersion("PHPUnit", $(Get-PHPUnitVersion))
-$phpTools.AddNote("Both Xdebug and PCOV extensions are installed, but only Xdebug is enabled.")
+if (-not (Test-IsUbuntu24)) {
+    # Browsers and Drivers
+    $browsersTools = $installedSoftware.AddHeader("Browsers and Drivers")
+    $browsersTools.AddToolVersion("Google Chrome", $(Get-ChromeVersion))
+    $browsersTools.AddToolVersion("ChromeDriver", $(Get-ChromeDriverVersion))
+    $browsersTools.AddToolVersion("Chromium", $(Get-ChromiumVersion))
+    $browsersTools.AddToolVersion("Microsoft Edge", $(Get-EdgeVersion))
+    $browsersTools.AddToolVersion("Microsoft Edge WebDriver", $(Get-EdgeDriverVersion))
+    $browsersTools.AddToolVersion("Selenium server", $(Get-SeleniumVersion))
+    $browsersTools.AddToolVersion("Mozilla Firefox", $(Get-FirefoxVersion))
+    $browsersTools.AddToolVersion("Geckodriver", $(Get-GeckodriverVersion))
 
-# Haskell Tools
-$haskellTools = $installedSoftware.AddHeader("Haskell Tools")
-$haskellTools.AddToolVersion("Cabal", $(Get-CabalVersion))
-$haskellTools.AddToolVersion("GHC", $(Get-GHCVersion))
-$haskellTools.AddToolVersion("GHCup", $(Get-GHCupVersion))
-$haskellTools.AddToolVersion("Stack", $(Get-StackVersion))
-
-# Browsers and Drivers
-$browsersTools = $installedSoftware.AddHeader("Browsers and Drivers")
-$browsersTools.AddToolVersion("Google Chrome", $(Get-ChromeVersion))
-$browsersTools.AddToolVersion("ChromeDriver", $(Get-ChromeDriverVersion))
-$browsersTools.AddToolVersion("Chromium", $(Get-ChromiumVersion))
-$browsersTools.AddToolVersion("Microsoft Edge", $(Get-EdgeVersion))
-$browsersTools.AddToolVersion("Microsoft Edge WebDriver", $(Get-EdgeDriverVersion))
-
-$browsersTools.AddToolVersion("Selenium server", $(Get-SeleniumVersion))
-$browsersTools.AddToolVersion("Mozilla Firefox", $(Get-FirefoxVersion))
-$browsersTools.AddToolVersion("Geckodriver", $(Get-GeckodriverVersion))
-
-
-# Environment variables
-$browsersTools.AddHeader("Environment variables").AddTable($(Build-BrowserWebdriversEnvironmentTable))
+    # Environment variables
+    $browsersTools.AddHeader("Environment variables").AddTable($(Build-BrowserWebdriversEnvironmentTable))
+}
 
 # Databases
 $databasesTools = $installedSoftware.AddHeader("Databases")

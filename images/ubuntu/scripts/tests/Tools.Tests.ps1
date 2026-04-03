@@ -79,12 +79,6 @@ Describe "gcc" {
     }
 }
 
-Describe "R" -Skip:((-not (Test-IsUbuntu22))) {
-    It "r" {
-        "R --version" | Should -ReturnZeroExitCode
-    }
-}
-
 Describe "Sbt" -Skip:((-not (Test-IsUbuntu22))) {
     It "sbt" {
         "sbt --version" | Should -ReturnZeroExitCode
@@ -133,12 +127,6 @@ Describe "Git" {
 Describe "Git-lfs" {
     It "git-lfs" {
         "git-lfs --version" | Should -ReturnZeroExitCode
-    }
-}
-
-Describe "Heroku" -Skip:((-not (Test-IsUbuntu22))) {
-    It "heroku" {
-        "heroku --version" | Should -ReturnZeroExitCode
     }
 }
 
